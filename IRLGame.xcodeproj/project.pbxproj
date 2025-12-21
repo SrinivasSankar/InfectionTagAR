@@ -292,6 +292,9 @@
 				DEVELOPMENT_TEAM = 68T2FZT3T8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = IRLGame/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera for augmented reality gameplay and to show other players’ locations.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Location used to track player.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location used to track player.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -324,6 +327,9 @@
 				DEVELOPMENT_TEAM = 68T2FZT3T8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = IRLGame/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera for augmented reality gameplay and to show other players’ locations.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Location used to track player.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location used to track player.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
