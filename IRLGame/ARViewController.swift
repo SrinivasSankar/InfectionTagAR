@@ -8,63 +8,60 @@
 import UIKit
 import ARKit
 import RealityKit
-import CoreLocation
 
-final class ARViewController: UIViewController, CLLocationManagerDelegate {
+final class ARViewController: UIViewController {
 
+    // MARK: - ARCore
     var arView: ARView!
-    var locationManager: CLLocationManager?
-    private var lastLocation: CLLocation?
-    var players: [String: ModelEntity] = [:]
-
+    var worldOrigin: simd_float4x4?
+    var positionTimer: Timer?
+    
+    // Remote Players
+    var playerAnchors: [String: AnchorEntity] = [:]
+    
+    
+    // MARK: - Lifecyle
     override func viewDidLoad() {
         super.viewDidLoad()
-
         title = "AR"
         view.backgroundColor = .black
-
+        
+        MultiplayerService.shared.onPlayerUpdated = { [weak self] player in
+            self?.updateRemotePlayer(
+                id: player.id,
+                position: player.position
+            )
+        }
+        
+        MultiplayerService.shared.onPlayerRemoved = { [weak self] id in
+                    self?.removeRemotePlayer(id)
+                }
         setupBackButton()
-
-        WebSocketManager.shared.connect()
-
-        locationManager = CLLocationManager()
-        locationManager?.delegate = self
-        locationManager?.requestWhenInUseAuthorization()
-        requestLocationUpdate()
-
         setupARView()
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         startARSession()
+        waitForStableTracking()
     }
-
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-
         // IMPORTANT: stop camera + tracking when leaving AR screen
         if self.isMovingFromParent {
             arView?.session.pause()
-            locationManager?.stopUpdatingLocation()
         }
     }
-
-    private func setupBackButton() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: "Back",
-            style: .plain,
-            target: self,
-            action: #selector(backPressed)
-        )
+    
+    func removeRemotePlayer(_ id: String) {
+        guard let anchor = playerAnchors[id] else { return }
+        anchor.removeFromParent()
+        playerAnchors.removeValue(forKey: id)
     }
-
-    @objc private func backPressed() {
-        arView.session.pause()
-        locationManager?.stopUpdatingLocation()
-        navigationController?.popViewController(animated: true)
-    }
-
+    
+    
+    // MARK: - Setup
     private func setupARView() {
         arView = ARView(frame: view.bounds)
         arView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -78,31 +75,79 @@ final class ARViewController: UIViewController, CLLocationManagerDelegate {
         arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
         print("AR Session started")
     }
+    
+    
+    // MARK: - World Origin
+    private func waitForStableTracking() {
+        Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { timer in
+            guard let frame = self.arView.session.currentFrame,
+                  case .normal = frame.camera.trackingState else { return }
 
-    // ------- Your existing player code -------
-    func updatePlayer(id: String, newPosition: SIMD3<Float>) {
-        guard let player = players[id] else { return }
-        let smoothing: Float = 0.1
-        player.position = simd_mix(player.position, newPosition, SIMD3<Float>(repeating: smoothing))
-    }
-
-    func addPlayer(id: String, initialPosition: SIMD3<Float>) {
-        if players[id] != nil { return }
-
-        let anchor = AnchorEntity(world: initialPosition)
-
-        let player = ModelEntity(
-            mesh: .generateSphere(radius: 0.25),
-            materials: [SimpleMaterial(color: .red, isMetallic: false)]
-        )
-
-        anchor.addChild(player)
-        arView.scene.addAnchor(anchor)
-
-        players[id] = player
-        print("Added Player:", id)
+            self.worldOrigin = frame.camera.transform
+            print("World origin locked")
+            timer.invalidate()
+            self.startSendingPosition()
+        }
     }
     
+    private func currentPlayerPosition() -> SIMD3<Float>? {
+            guard let frame = arView.session.currentFrame,
+                  let origin = worldOrigin else { return nil }
+
+            let relative = simd_mul(simd_inverse(origin), frame.camera.transform)
+            return SIMD3(relative.columns.3.x,
+                         relative.columns.3.y,
+                         relative.columns.3.z)
+        }
+
+    
+    // MARK: - Multiplayer Position Sending
+    private func startSendingPosition() {
+        positionTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            guard let pos = self.currentPlayerPosition() else { return }
+            MultiplayerService.shared.sendPlayerMove(pos)
+        }
+    }
+    
+    
+    // MARK: - UI
+    private func setupBackButton() {
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: "Back",
+            style: .plain,
+            target: self,
+            action: #selector(backPressed)
+        )
+    }
+
+    @objc private func backPressed() {
+        arView.session.pause()
+        navigationController?.popViewController(animated: true)
+    }
+
+    
+    // MARK: - Remote Players
+    func updateRemotePlayer(id: String, position: SIMD3<Float>) {
+        if let anchor = playerAnchors[id] {
+            anchor.position = simd_mix(anchor.position, position, SIMD3<Float>(repeating: 0.15))
+            return
+        }
+
+        let anchor = AnchorEntity(world: position)
+
+        let model = ModelEntity(
+            mesh: .generateSphere(radius: 0.2),
+            materials: [SimpleMaterial(color: .blue, isMetallic: false)]
+        )
+
+        anchor.addChild(model)
+        arView.scene.addAnchor(anchor)
+        playerAnchors[id] = anchor
+
+        print("Spawned remote player:", id)
+    }
+    
+    // MARK: - Manual Local Spawn (Debug)
     @IBAction func spawnPlayer(_ sender: UIButton) {
         print("Spawn button pressed")
         guard let frame = arView.session.currentFrame else {
@@ -139,38 +184,5 @@ final class ARViewController: UIViewController, CLLocationManagerDelegate {
         arView.scene.addAnchor(anchor)
 
         print("Spawned entity at", position)
-    }
-
-    @IBAction func movePlayerLeft(_ sender: UIButton) {
-        updatePlayer(id: "TestPlayer", newPosition: [-2, 0, -3])
-    }
-
-    @IBAction func movePlayerRight(_ sender: UIButton) {
-        updatePlayer(id: "TestPlayer", newPosition: [2, 0, -3])
-    }
-
-    @IBAction func sendButton(_ sender: UIButton) {
-        guard let location = lastLocation else { return }
-        sendLocation(lat: location.coordinate.latitude,
-                     lon: location.coordinate.longitude,
-                     alt: location.altitude)
-        print("Location Sent to WebSocket")
-    }
-
-    func sendLocation(lat: Double, lon: Double, alt: Double) {
-        let location: [String: Any] = [
-            "type": "location",
-            "lat": lat,
-            "lon": lon,
-            "alt": alt
-        ]
-        if let data = try? JSONSerialization.data(withJSONObject: location),
-           let json = String(data: data, encoding: .utf8) {
-            WebSocketManager.shared.send(text: json)
-        }
-    }
-
-    private func requestLocationUpdate() {
-        locationManager?.startUpdatingLocation()
     }
 }
