@@ -47,10 +47,11 @@ final class WebSocketManager {
             case .success(let message):
                 switch message {
                 case .string(let text):
-                    print("Received:", text)
+                    //print("Received:", text)
                     self?.onText?(text)
-                case .data(let data):
-                    print("Received data:", data)
+                    self?.handleMessage(text)
+//                case .data(let data):
+//                    print("Received data:", data)
                 @unknown default:
                     break
                 }
@@ -73,15 +74,20 @@ final class WebSocketManager {
         switch type {
         case "GAME_STARTED":
             print("Server says game started")
-            GameService.shared.onGameStarted()
+            DispatchQueue.main.async {
+                GameService.shared.onGameStarted()
+            }
             
         case "GAME_ENDED":
             print("Server ended game")
-            GameService.shared.onGameEnded()
+            DispatchQueue.main.async {
+                GameService.shared.onGameEnded()
+            }
             
-//        case "PLAYER_MOVE":
-//            MultiplayerRouter.routePlayerMove(json)
-            
+        case "PLAYERS_UPDATE":
+            print("Player Location Update Recieved")
+            MultiplayerService.shared.handlePlayersUpdate(json)
+                        
         default:
             print("Unhandled event: ", type)
         }

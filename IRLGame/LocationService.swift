@@ -68,7 +68,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         guard now.timeIntervalSince(lastSentTime) >= sendInterval else { return }
         lastSentTime = now
 
-        MultiplayerService.shared.sendLocation(loc)
+//        MultiplayerService.shared.sendLocation(loc)
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

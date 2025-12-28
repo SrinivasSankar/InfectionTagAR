@@ -40,7 +40,13 @@ final class HomeViewController: UIViewController {
         GameService.shared.joinGame(id: gameID)
     }
     
+    @IBAction func LeaveGame(_ sender: UIButton) {
+        GameService.shared.leaveGame()
+    }
+    
     @IBAction func startARPressed(_ sender: UIButton) {
+        GameService.shared.arViewStart()
+
         let arVC = storyboard!.instantiateViewController(
             withIdentifier: "ARViewController"
         ) as! ARViewController

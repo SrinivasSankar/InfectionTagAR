@@ -15,7 +15,6 @@ final class GameService {
     
     let playerID = MultiplayerService.shared.playerID
     
-    
     // MARK: Client Requests
     func createGame() {
         print("Game Created")
@@ -27,9 +26,6 @@ final class GameService {
     }
     
     func startGame() {
-        guard !isGameActive else { return }
-        isGameActive = true
-
         print("Game Started")
         send([
             "type": "START_GAME",
@@ -39,6 +35,7 @@ final class GameService {
     
     func joinGame(id: String) {
         print("Joining Game: ", id)
+        WebSocketManager.shared.connect()
         send([
             "type": "JOIN_GAME",
             "playerID": playerID,
@@ -47,9 +44,6 @@ final class GameService {
     }
 
     func leaveGame() {
-        guard isGameActive else { return }
-        isGameActive = false
-
         print("You have left the game")
         send([
             "type": "LEAVE_GAME",
@@ -58,9 +52,6 @@ final class GameService {
     }
     
     func endGame() {
-        guard isGameActive else { return }
-        isGameActive = false
-
         print("Game ended")
         send([
             "type": "END_GAME",
@@ -68,22 +59,21 @@ final class GameService {
         ])
     }
     
+    func arViewStart() {
+        print("AR View Started")
+        WebSocketManager.shared.connect()
+    }
+    
     
     // MARK: Server Callbacks
     func onGameStarted() {
-        guard !isGameActive else { return }
-        isGameActive = true
-        
         print("Game ACTIVE - Starting location updates")
-        LocationService.shared.start()
+//        LocationService.shared.start()
     }
     
     func onGameEnded() {
-        guard isGameActive else { return }
-        isGameActive = false
-        
         print("Game INACTIVE - Stopping location updates")
-        LocationService.shared.stop()
+//        LocationService.shared.stop()
     }
     
     private func send(_ payload: [String: Any]) {

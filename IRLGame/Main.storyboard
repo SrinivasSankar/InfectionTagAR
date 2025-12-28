@@ -32,17 +32,8 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nnO-nB-Io6">
-                                <rect key="frame" x="100" y="141" width="192" height="72"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="filled" title="Start AR"/>
-                                <connections>
-                                    <segue destination="Fqb-S3-EhG" kind="show" id="cFf-Rj-bHf"/>
-                                </connections>
-                            </button>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="PFR-ow-S9H">
-                                <rect key="frame" x="107" y="534" width="179" height="62"/>
+                                <rect key="frame" x="107" y="435" width="179" height="62"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Create Game"/>
@@ -51,40 +42,48 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nJV-Em-Kjr">
-                                <rect key="frame" x="107" y="619" width="179" height="62"/>
+                                <rect key="frame" x="107" y="520" width="179" height="62"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Start Game"/>
                                 <connections>
                                     <action selector="StartGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="tCD-ZX-whm"/>
+                                    <segue destination="b87-sP-fnf" kind="show" id="2Q0-Ce-Dy7"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rKL-CR-rMs">
-                                <rect key="frame" x="107" y="707" width="179" height="62"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="filled" title="End Game"/>
-                                <connections>
-                                    <action selector="EndGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="w0w-HN-TSg"/>
-                                    <action selector="StartGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="oVN-V3-uK9"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="LHV-mA-pMq">
-                                <rect key="frame" x="107" y="333" width="179" height="62"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="filled" title="Join Game"/>
-                                <connections>
-                                    <action selector="CreateGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="fOp-2W-7B1"/>
-                                    <action selector="JoinGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="aiq-bo-CfL"/>
-                                </connections>
-                            </button>
-                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Enter Code" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="4iY-qT-nbv">
+                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="4iY-qT-nbv">
                                 <rect key="frame" x="113" y="263" width="166" height="34"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ybP-vX-u1e">
+                                <rect key="frame" x="104" y="328" width="184" height="77"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Join Game"/>
+                                <connections>
+                                    <action selector="JoinGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="W5r-xo-otR"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="b70-a5-yIH">
+                                <rect key="frame" x="112" y="609" width="169" height="67"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="End Game"/>
+                                <connections>
+                                    <action selector="EndGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="yyj-3n-zRI"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qbc-Cf-F9J">
+                                <rect key="frame" x="107" y="723" width="180" height="61"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Leave Game"/>
+                                <connections>
+                                    <action selector="LeaveGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="c6v-ft-FxK"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="eNl-G6-Yht"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -98,10 +97,38 @@
             </objects>
             <point key="canvasLocation" x="1441.9847328244275" y="645.77464788732402"/>
         </scene>
+        <!--View Controller-->
+        <scene sceneID="KZ6-WC-OBX">
+            <objects>
+                <viewController id="b87-sP-fnf" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="asm-HR-z5k">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C0a-UA-MkN">
+                                <rect key="frame" x="100" y="285" width="192" height="72"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Start AR"/>
+                                <connections>
+                                    <action selector="startARPressed:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="fpJ-kv-FAK"/>
+                                    <segue destination="Fqb-S3-EhG" kind="show" id="4Qr-rf-zJS"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="MLc-Cz-6N7"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="f1Y-Jh-2jX"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="rTA-Iy-MHy" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2347.3282442748091" y="645.77464788732402"/>
+        </scene>
         <!--AR Screen-->
         <scene sceneID="J0h-JE-XYg">
             <objects>
-                <viewController title="AR Screen" id="Fqb-S3-EhG" customClass="ARViewController" customModule="IRLGame" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ARViewController" title="AR Screen" id="Fqb-S3-EhG" customClass="ARViewController" customModule="IRLGame" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="jt9-Wd-gTa">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -133,6 +160,24 @@
                                     <action selector="movePlayerRight:" destination="Fqb-S3-EhG" eventType="touchUpInside" id="JoW-Aj-JXn"/>
                                 </connections>
                             </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="iNF-JM-MCd">
+                                <rect key="frame" x="55" y="739" width="106" height="54"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Set Origin"/>
+                                <connections>
+                                    <action selector="setSharedOriginTapped:" destination="Fqb-S3-EhG" eventType="touchUpInside" id="Y5q-3R-SgG"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="mzp-Qd-SV9">
+                                <rect key="frame" x="228" y="737" width="106" height="56"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Show"/>
+                                <connections>
+                                    <action selector="showPlayers:" destination="Fqb-S3-EhG" eventType="touchUpInside" id="sd5-dq-qah"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="ofP-vz-TdZ"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -141,7 +186,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="EHJ-Co-fa9" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2571.7557251908397" y="645.77464788732402"/>
+            <point key="canvasLocation" x="3272.5190839694656" y="645.77464788732402"/>
         </scene>
     </scenes>
     <resources>
