@@ -48,7 +48,6 @@
                                 <buttonConfiguration key="configuration" style="filled" title="Start Game"/>
                                 <connections>
                                     <action selector="StartGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="tCD-ZX-whm"/>
-                                    <segue destination="b87-sP-fnf" kind="show" id="2Q0-Ce-Dy7"/>
                                 </connections>
                             </button>
                             <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="4iY-qT-nbv">
@@ -84,6 +83,25 @@
                                     <action selector="LeaveGame:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="c6v-ft-FxK"/>
                                 </connections>
                             </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="B1Z-qA-nxv">
+                                <rect key="frame" x="126" y="172" width="141" height="67"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Set Origin"/>
+                                <connections>
+                                    <action selector="setOriginButtonPressed:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="ZQZ-Yx-fne"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C0a-UA-MkN">
+                                <rect key="frame" x="120" y="76" width="167" height="62"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="Start AR"/>
+                                <connections>
+                                    <action selector="startARPressed:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="fpJ-kv-FAK"/>
+                                    <segue destination="Fqb-S3-EhG" kind="show" id="4Qr-rf-zJS"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="eNl-G6-Yht"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -104,18 +122,6 @@
                     <view key="view" contentMode="scaleToFill" id="asm-HR-z5k">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C0a-UA-MkN">
-                                <rect key="frame" x="100" y="285" width="192" height="72"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="filled" title="Start AR"/>
-                                <connections>
-                                    <action selector="startARPressed:" destination="Px5-Dp-LwF" eventType="touchUpInside" id="fpJ-kv-FAK"/>
-                                    <segue destination="Fqb-S3-EhG" kind="show" id="4Qr-rf-zJS"/>
-                                </connections>
-                            </button>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="MLc-Cz-6N7"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>

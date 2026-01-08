@@ -4,17 +4,20 @@
 //
 //  Created by Srinivas Sankaranarayanan on 12/20/25.
 //
+//  ARViewController deals with the AR mode in the game and its components.
 
 import UIKit
 import ARKit
 import RealityKit
 
 final class ARViewController: UIViewController {
-
+    
     // MARK: - ARCore
     var arView: ARView!
     var worldOrigin: simd_float4x4?
     var positionTimer: Timer?
+    
+    var sessionStartCameraTransform: simd_float4x4?
     
     var sharedOriginTransform: simd_float4x4?
     var isSharedOriginSet = false
@@ -22,28 +25,37 @@ final class ARViewController: UIViewController {
     // Remote Players
     var playerAnchors: [String: AnchorEntity] = [:]
     
+    // Stable Tracking
+    var isUsingStableTracking: Bool = false
+    
+    private var didStartSession = false
+    private var pendingPositions: [String: SIMD3<Float>] = [:]
+
     
     // MARK: - Lifecyle
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("AR viewDidLoad instance:", ObjectIdentifier(self))
+        
         title = "AR"
         view.backgroundColor = .black
         
+//        MultiplayerService.shared.onPlayerUpdated = { [weak self] player in
+//            print("AR RECEIVED UPDATE:", player.id, player.position)
+//            self?.spawnOrUpdatePlayer(
+//                id: player.id,
+//                position: player.position
+//            )
+//        }
+        
         MultiplayerService.shared.onPlayerUpdated = { [weak self] player in
-            self?.updateRemotePlayer(
-                id: player.id,
-                position: player.position
-            )
+            guard let self else { return }
+            self.pendingPositions[player.id] = player.position
+            self.spawnOrUpdatePlayerIfReady(id: player.id)
         }
         
         MultiplayerService.shared.onPlayerRemoved = { [weak self] id in
                     self?.removeRemotePlayer(id)
-        }
-        
-        if self.isMovingFromParent {
-                positionTimer?.invalidate()
-                positionTimer = nil
-                arView?.session.pause()
         }
         
         setupBackButton()
@@ -52,8 +64,14 @@ final class ARViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        print("AR viewWillAppear instance:", ObjectIdentifier(self))
+
+        guard !didStartSession else { return }
+
         startARSession()
         waitForStableTracking()
+        didStartSession = true
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -99,24 +117,23 @@ final class ARViewController: UIViewController {
     
     private func waitForStableTracking() {
         Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { timer in
-            self.lockWorldOrigin()
-            if self.worldOrigin != nil {
+//            self.lockWorldOrigin()
+//            if self.worldOrigin != nil {
+//                timer.invalidate()
+////                self.startSendingPosition( )
+//            }
+//            
+            guard let frame = self.arView.session.currentFrame,
+                  case .normal = frame.camera.trackingState else { return }
+
+            if self.sessionStartCameraTransform == nil {
+                self.sessionStartCameraTransform = frame.camera.transform
+                print("Session start camera captured")
+                self.spawnAllPlayers()
                 timer.invalidate()
-                self.startSendingPosition()
             }
         }
     }
-    
-//    private func currentPlayerPosition() -> SIMD3<Float>? {
-//        guard let frame = arView.session.currentFrame,
-//              let origin = worldOrigin else { return nil }
-//
-//        let cameraTransform = frame.camera.transform
-//        let relative = simd_mul(simd_inverse(origin), cameraTransform)
-//        return SIMD3(relative.columns.3.x,
-//                     relative.columns.3.y,
-//                     relative.columns.3.z)
-//    }
     
     func currentPositionRelativeToSharedOrigin() -> SIMD3<Float>? {
         guard let frame = arView.session.currentFrame,
@@ -136,13 +153,23 @@ final class ARViewController: UIViewController {
     }
 
     
-    // MARK: - Multiplayer Position Sending
-    private func startSendingPosition() {
-        positionTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            guard let pos = self.currentPositionRelativeToSharedOrigin() else { return }
-            MultiplayerService.shared.sendPlayerMove(pos)
-        }
-    }
+    // MARK: - User Position Sending
+//    private func startSendingPosition() {
+//        positionTimer?.invalidate()
+//        positionTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+//            guard self.isSharedOriginSet,
+//            let pos = self.currentPositionRelativeToSharedOrigin() else { return }
+//            
+//            MultiplayerService.shared.sendPlayerMove(pos)
+//            print("Location has started being sent to the server.")
+//        }
+//    }
+//    
+//    private func stopSendingPosition() {
+//        positionTimer?.invalidate()
+//        positionTimer = nil
+//        print("Location has stopped being sent to the server.")
+//    }
     
     
     // MARK: - UI
@@ -163,94 +190,190 @@ final class ARViewController: UIViewController {
     
     // MARK: - Remote Players
 //    func updateRemotePlayer(id: String, position: SIMD3<Float>) {
-//        if let anchor = playerAnchors[id] {
-//            anchor.position = simd_mix(anchor.position, position, SIMD3<Float>(repeating: 0.15))
-//            return
-//        }
+//        print("Position: ", position)
+//        print("X(Lon):", position.x, "Y(Lat):", position.y, "Z(Alt):", position.z)
 //
-//        let anchor = AnchorEntity(world: position)
+//        guard id != MultiplayerService.shared.playerID else { return }
 //
-//        let model = ModelEntity(
-//            mesh: .generateSphere(radius: 0.2),
-//            materials: [SimpleMaterial(color: .blue, isMetallic: false)]
+//        // Must have shared origin
+//        guard let sharedOrigin = sharedOriginTransform,
+//              isSharedOriginSet else { return }
+//
+//        // Validate position
+//        guard position.x.isFinite,
+//              position.y.isFinite,
+//              position.z.isFinite,
+//              simd_length(position) > 0.001 else { return }
+//        
+//        let worldTransform =
+//            simd_mul(sharedOrigin, simd_float4x4(translation: position))
+//        
+//        print("World Transform:", worldTransform)
+//        let worldPos = SIMD3<Float>(
+//            worldTransform.columns.3.x,
+//            worldTransform.columns.3.y,
+//            worldTransform.columns.3.z
 //        )
 //
-//        anchor.addChild(model)
-//        arView.scene.addAnchor(anchor)
-//        playerAnchors[id] = anchor
+//        guard let frame = arView.session.currentFrame else { return }
 //
-//        print("Spawned remote player:", id)
+//        let camPos = SIMD3<Float>(
+//            frame.camera.transform.columns.3.x,
+//            frame.camera.transform.columns.3.y,
+//            frame.camera.transform.columns.3.z
+//        )
+//
+//        let distance = simd_length(worldPos - camPos)
+//        print("Remote player distance:", distance)
+//
+//        DispatchQueue.main.async {
+//            if let anchor = self.playerAnchors[id] {
+//                anchor.transform.matrix = worldTransform
+//                return
+//            }
+//
+//            let anchor = AnchorEntity(world: worldTransform)
+//            
+//            let model = ModelEntity(
+//                mesh: .generateSphere(radius: 0.2),
+//                materials: [SimpleMaterial(color: .blue, isMetallic: false)]
+//            )
+//
+//            anchor.addChild(model)
+//            self.arView.scene.addAnchor(anchor)
+//            self.playerAnchors[id] = anchor
+//
+//            print("Spawned remote player:", id)
+//        }
 //    }
-    func updateRemotePlayer(id: String, position: SIMD3<Float>) {
-        print("Position: ", position)
-        print("X(Lon):", position.x, "Y(Lat):", position.y, "Z(Alt):", position.z)
-        // Never render yourself
+//    
+//    private func yawOnlyTransform(from t: simd_float4x4) -> simd_float4x4 {
+//
+//        // ARKit forward is -Z
+//        let forward = SIMD3<Float>(-t.columns.2.x, 0, -t.columns.2.z)
+//        let f = simd_normalize(forward)
+//
+//        let up = SIMD3<Float>(0, 1, 0)
+//
+//        // ✅ FIX: forward × up (not up × forward)
+//        let right = simd_normalize(simd_cross(f, up))
+//        let newUp = simd_cross(right, f)
+//
+//        var out = matrix_identity_float4x4
+//
+//        // Columns = basis vectors
+//        out.columns.0 = SIMD4<Float>(right.x,  right.y,  right.z,  0) // +X right
+//        out.columns.1 = SIMD4<Float>(newUp.x,  newUp.y,  newUp.z,  0) // +Y up
+//        out.columns.2 = SIMD4<Float>(-f.x,     -f.y,     -f.z,     0) // -Z forward
+//
+//        // Preserve position
+//        out.columns.3 = t.columns.3
+//
+//        return out
+//    }
+    
+//    func spawnPlayer(id: String, position: SIMD3<Float>) {
+//        print("Player Spawned: ", id)
+//        guard let origin = sessionStartCameraTransform else {
+//            print("Session start camera not set yet")
+//            return
+//        }
+//        
+//        //let yawOrigin = yawOnlyTransform(from: origin)
+//        
+//        // Local offset relative to session start camera
+//        let localOffset = SIMD3<Float>(position.x, position.y, position.z) // 1 meter forward
+//
+//        // Convert local offset → world transform
+//        let worldTransform =
+//            simd_mul(origin, simd_float4x4(translation: localOffset))
+//
+//        let anchor = AnchorEntity(world: worldTransform)
+//
+//        let sphere = ModelEntity(
+//            mesh: .generateSphere(radius: 0.15),
+//            materials: [SimpleMaterial(color: .red, isMetallic: false)]
+//        )
+//
+//        anchor.addChild(sphere)
+//        arView.scene.addAnchor(anchor)
+//
+//        let p = worldTransform.columns.3
+//        print("Spawned at x:\(p.x) y:\(p.y) z:\(p.z)")
+//    }
+    
+    private func spawnOrUpdatePlayerIfReady(id: String) {
+        guard let pos = pendingPositions[id],
+              sessionStartCameraTransform != nil else { return }
+
+        spawnOrUpdatePlayer(id: id, position: pos)
+    }
+    
+    func spawnOrUpdatePlayer(id: String, position: SIMD3<Float>) {
         guard id != MultiplayerService.shared.playerID else { return }
 
-        // Must have shared origin
-        guard let sharedOrigin = sharedOriginTransform,
-              isSharedOriginSet else { return }
+        guard let origin = sessionStartCameraTransform else {
+            print("Session start camera not set yet")
+            return
+        }
 
-        // Validate position
-        guard position.x.isFinite,
-              position.y.isFinite,
-              position.z.isFinite,
-              simd_length(position) > 0.001 else { return }
+        print("RENDER:", id, position)
+
+        // Convert server offset → world transform
+        let worldTransform = simd_float4x4(translation: position)
+
+        let t = Transform(matrix: worldTransform)
 
         DispatchQueue.main.async {
-
-            // Convert shared-origin space → AR world space
-            let worldTransform =
-                simd_mul(sharedOrigin, simd_float4x4(translation: position))
-
             if let anchor = self.playerAnchors[id] {
-                anchor.transform.matrix = worldTransform
+                // ✅ MOVE every update
+                anchor.transform = t
                 return
             }
 
+            // ✅ SPAWN once
             let anchor = AnchorEntity(world: worldTransform)
 
             let model = ModelEntity(
-                mesh: .generateSphere(radius: 0.2),
-                materials: [SimpleMaterial(color: .blue, isMetallic: false)]
+                mesh: .generateSphere(radius: 0.15),
+                materials: [SimpleMaterial(color: .red, isMetallic: false)]
             )
 
             anchor.addChild(model)
             self.arView.scene.addAnchor(anchor)
             self.playerAnchors[id] = anchor
 
-            print("Spawned remote player:", id)
+            print("Spawned player:", id)
         }
     }
-
+    
+    private func spawnAllPlayers() {
+        for player in MultiplayerService.shared.players.values {
+            spawnOrUpdatePlayer(
+                    id: player.id,
+                    position: player.position
+                )
+            }
+    }
+    
     
     // MARK: - Manual Local Spawn (Debug)
     @IBAction func spawnPlayer(_ sender: UIButton) {
         print("Spawn button pressed")
-        guard let frame = arView.session.currentFrame else {
-            print("No ARFrame yet")
+        guard let origin = sessionStartCameraTransform else {
+            print("Session start camera not set yet")
             return
         }
+        
+        
+        // Local offset relative to session start camera
+        let localOffset = SIMD3<Float>(1, 1, -1) // 1 meter forward
 
-        // Ensure tracking is ready
-        guard case .normal = frame.camera.trackingState else {
-            print("Tracking not ready:", frame.camera.trackingState)
-            return
-        }
+        // Convert local offset → world transform
+        let worldTransform =
+            simd_mul(origin, simd_float4x4(translation: localOffset))
 
-        // Create anchor 1 meter in front of camera
-        let cameraTransform = frame.camera.transform
-        let forward = -SIMD3<Float>(cameraTransform.columns.2.x,
-                                    cameraTransform.columns.2.y,
-                                    cameraTransform.columns.2.z)
-
-        let position = SIMD3<Float>(
-            cameraTransform.columns.3.x,
-            cameraTransform.columns.3.y,
-            cameraTransform.columns.3.z
-        ) + forward * 1.0
-
-        let anchor = AnchorEntity(world: position)
+        let anchor = AnchorEntity(world: worldTransform)
 
         let sphere = ModelEntity(
             mesh: .generateSphere(radius: 0.15),
@@ -260,7 +383,8 @@ final class ARViewController: UIViewController {
         anchor.addChild(sphere)
         arView.scene.addAnchor(anchor)
 
-        print("Spawned entity at", position)
+        let p = worldTransform.columns.3
+        print("Spawned at x:\(p.x) y:\(p.y) z:\(p.z)")
     }
     
     @IBAction func setSharedOriginTapped(_ sender: UIButton) {
@@ -270,17 +394,10 @@ final class ARViewController: UIViewController {
             return
         }
 
-//        var origin = frame.camera.transform
-//
-//        // Remove rotation — keep translation only
-//        origin.columns.0 = SIMD4(1, 0, 0, 0)
-//        origin.columns.1 = SIMD4(0, 1, 0, 0)
-//        origin.columns.2 = SIMD4(0, 0, 1, 0)
-
         sharedOriginTransform = frame.camera.transform
         isSharedOriginSet = true
 
-        print("✅ Shared origin set")
+        print("Shared origin set")
 
         // Optional: visualize the origin
         let anchor = AnchorEntity(world: frame.camera.transform)
@@ -292,30 +409,8 @@ final class ARViewController: UIViewController {
         arView.scene.addAnchor(anchor)
     }
     
-    @IBAction func showPlayers(_ sender: UIButton) {
-        MultiplayerService.shared.playerLocation()
-    }
-    
-//    @IBAction func setSharedOriginTapped(_ sender: UIButton) {
-//        guard let frame = arView.session.currentFrame,
-//              case .normal = frame.camera.trackingState else {
-//            print("Tracking not ready — cannot set origin")
-//            return
-//        }
-//
-//        sharedOriginTransform = frame.camera.transform
-//        isSharedOriginSet = true
-//
-//        print("✅ Shared origin set")
-//
-//        // Optional: visualize the origin
-//        let anchor = AnchorEntity(world: frame.camera.transform)
-//        let marker = ModelEntity(
-//            mesh: .generateSphere(radius: 0.05),
-//            materials: [SimpleMaterial(color: .green, isMetallic: false)]
-//        )
-//        anchor.addChild(marker)
-//        arView.scene.addAnchor(anchor)
+//    @IBAction func showPlayers(_ sender: UIButton) {
+//        MultiplayerService.shared.playerLocation()
 //    }
 }
 

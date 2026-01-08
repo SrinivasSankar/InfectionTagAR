@@ -44,14 +44,29 @@ final class HomeViewController: UIViewController {
         GameService.shared.leaveGame()
     }
     
+//    @IBAction func setOriginButtonPressed(_ sender: UIButton) {
+//        print("Set Origin Pressed")
+//        LocationService.shared.getLocationOnce { location in
+//            GameService.shared.setOrigin(location)
+//        }
+//    }
+    
     @IBAction func startARPressed(_ sender: UIButton) {
-        GameService.shared.arViewStart()
+        print("Start AR Pressed")
+        LocationService.shared.stopHeadingUpdates()
+        GameService.shared.startAR()
+        guard !(navigationController?.topViewController is ARViewController) else {
+            print("AR already running — ignoring Start AR")
+            return
+        }
+        sender.isEnabled = false
+        DispatchQueue.main.async {
+            let arVC = self.storyboard!.instantiateViewController(
+                withIdentifier: "ARViewController"
+            ) as! ARViewController
 
-        let arVC = storyboard!.instantiateViewController(
-            withIdentifier: "ARViewController"
-        ) as! ARViewController
-
-        navigationController?.pushViewController(arVC, animated: true)
+            self.navigationController?.pushViewController(arVC, animated: true)
+        }
     }
 }
 

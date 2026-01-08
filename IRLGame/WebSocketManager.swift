@@ -18,7 +18,7 @@ final class WebSocketManager {
     
     func connect() {
         guard let url = URL(string: "wss://domical-kasi-aguishly.ngrok-free.dev/socket") else { return }
-
+        //guard let url = URL(string: "wss://spathic-sommer-parablastic.ngrok-free.dev") else { return }
         webSocketTask = session.webSocketTask(with: url)
         webSocketTask.resume()
 
@@ -47,7 +47,7 @@ final class WebSocketManager {
             case .success(let message):
                 switch message {
                 case .string(let text):
-                    //print("Received:", text)
+                    print("Received:", text)
                     self?.onText?(text)
                     self?.handleMessage(text)
 //                case .data(let data):
@@ -72,12 +72,14 @@ final class WebSocketManager {
         }
         
         switch type {
+            // Server responds to the startGame request and starts the game
         case "GAME_STARTED":
             print("Server says game started")
             DispatchQueue.main.async {
                 GameService.shared.onGameStarted()
             }
             
+            // Server responds to the endGame request and ends the game
         case "GAME_ENDED":
             print("Server ended game")
             DispatchQueue.main.async {
@@ -85,9 +87,17 @@ final class WebSocketManager {
             }
             
         case "PLAYERS_UPDATE":
-            print("Player Location Update Recieved")
-            MultiplayerService.shared.handlePlayersUpdate(json)
-                        
+            print("PLAYERS_UPDATE recieved")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                MultiplayerService.shared.handlePlayer(json)
+                GameService.shared.sendPosition()
+            }
+            
+        case "GAMEID":
+            GameService.shared.gameID = json["gameID"] as? String
+            
+//        case "AR_POSITIONS":
+//            MultiplayerService.shared.handleARPositions(json)
         default:
             print("Unhandled event: ", type)
         }
