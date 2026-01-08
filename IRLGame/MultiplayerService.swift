@@ -113,6 +113,7 @@ final class MultiplayerService {
         guard
             // Gets the id, current location, and origin location for the remotePlayer
             let id = remotePlayer["playerID"] as? String,
+            var remotePlayerObject = players[id],
             let location = remotePlayer["location"] as? [String: Any],
             let lat = (location["lat"] as? NSNumber)?.floatValue,
             let lon = (location["lon"] as? NSNumber)?.floatValue,
@@ -123,6 +124,8 @@ final class MultiplayerService {
             let originAlt = (origin["alt"] as? NSNumber)?.floatValue,
             
             // Gets the current location, and origin location for the localPlayer
+            let localPlayerID = localPlayer["playerID"] as? String,
+            var localPlayerObject = players[localPlayerID],
             let localPlayerLocation = localPlayer["location"] as? [String: Any],
             let localPlayerLat = (localPlayerLocation["lat"] as? NSNumber)?.floatValue,
             let localPlayerLon = (localPlayerLocation["lon"] as? NSNumber)?.floatValue,
@@ -163,9 +166,13 @@ final class MultiplayerService {
         
         // Stores a SIMD3<Float> (x, y, z) position from localPlayer origin to their current location
         let localPlayerPoint = geoToLocal(localPlayerCurrentLocationObject, localPlayerOriginLocationObject)
+        // Applies localPlayer offset to their position
+        let localPlayerPointWithOffset = SIMD3<Float> (localPlayerPoint.x - localPlayerObject.dx, localPlayerPoint.y - localPlayerObject.dy, localPlayerPoint.z - localPlayerObject.dz)
         
         // Stores a SIMD3<Float> (x, y, z) position from remotePlayer origin to their current location
         let remotePlayerPoint = geoToLocal(remotePlayerCurrentLocationObject, remotePlayerOriginLocationObject)
+        // Applies remotePlayer offset to their position
+        let remotePlayerPointWithOffset = SIMD3<Float> (remotePlayerPoint.x - remotePlayerObject.dx, remotePlayerPoint.y - remotePlayerObject.dy, remotePlayerPoint.z - remotePlayerObject.dz)
         
         // Gets the localPlayer heading and makes sure it's not null.
         guard let localPlayerHeading = LocationService.shared.lastHeadingDeg else {
@@ -173,34 +180,14 @@ final class MultiplayerService {
             return
         }
         
-        let positionFromLocalPlayerToRemotePlayer = SIMD3<Float> (remotePlayerPoint.x - localPlayerPoint.x, remotePlayerPoint.y - localPlayerPoint.y, remotePlayerPoint.z - localPlayerPoint.z)
+        let positionFromLocalPlayerToRemotePlayer = SIMD3<Float> (remotePlayerPointWithOffset.x - localPlayerPointWithOffset.x, remotePlayerPointWithOffset.y - localPlayerPointWithOffset.y, remotePlayerPointWithOffset.z - localPlayerPointWithOffset.z)
         
-        let rotatedPositionOfLocalPlayerToRemotePlayer = rotatePosition(positionFromLocalPlayerToRemotePlayer, localPlayerHeading)
+        remotePlayerObject.position = positionFromLocalPlayerToRemotePlayer
         
-//        if var player = players[id] {
-//            let dx = player.dx
-//            let dy = player.dy
-//            let dz = player.dz
-//            let postition = SIMD3<Float> (rotatedPositionOfLocalPlayerToRemotePlayer.x - dx, rotatedPositionOfLocalPlayerToRemotePlayer.y - dy, rotatedPositionOfLocalPlayerToRemotePlayer.z - dz)
-//            player.position = postition
-//            player.lastUpdated = timestamp
-//            players[id] = player
-//            onPlayerUpdated?(player)
-//        } else {
-//            let player = RemotePlayer(
-//                id: id,
-//                position: rotatedPositionOfLocalPlayerToRemotePlayer,
-//                lastUpdated: timestamp,
-//                dx: positionFromLocalPlayerToRemotePlayer.x,
-//                dy: positionFromLocalPlayerToRemotePlayer.y,
-//                dz: positionFromLocalPlayerToRemotePlayer.z
-//            )
-//            players[id] = player
-//            onPlayerUpdated?(player)
-//        }
-//        print("Heading: \(localPlayerHeading)")
-//        print("Remote Player Location Updated:", id, rotatedPositionOfLocalPlayerToRemotePlayer)
+        players[id] = remotePlayerObject
+        onPlayerUpdated?(remotePlayerObject)
         
+        print("Remote Player Location Updated:", id, positionFromLocalPlayerToRemotePlayer)
     }
     
     
