@@ -5,7 +5,6 @@
 //  Created by Srinivas Sankaranarayanan on 12/22/25.
 //
 //  MultiplayerService deals with the calculations and updates to players status and locations.
-
 import Foundation
 import CoreLocation
 import simd
@@ -26,6 +25,12 @@ final class MultiplayerService {
     
     // Dictionary of players with their UUID as key and their RemotePlayer object as value.
     private(set) var players: [String: RemotePlayer] = [:]
+
+    private let calibrationSamplesNeeded = 10
+    private var calibrationSampleCount = 0
+    private var calibrationSum = SIMD3<Float>(repeating: 0)
+    private var isCalibrated = false
+    private var lastOriginKey: String?
     
     // Set of intructions to do when specific event happens.
     var onPlayerUpdated: ((RemotePlayer) -> Void)?
@@ -121,8 +126,10 @@ final class MultiplayerService {
     // Updates a single remote player using a pair of payloads: the remote player's
     // data and the local player's data from the same PLAYERS_UPDATE message. The
     // function converts GPS coordinates to local ENU space, applies each player's
-    // stored offset, then computes a relative vector from local to remote. The
-    // remote player's position is updated and the update callback is invoked.
+    // stored offset, and computes a relative vector from local to remote. It also
+    // runs a local calibration pass by averaging local ENU samples after origin
+    // changes, then persists the resulting offset. The remote player's position
+    // is updated and the update callback is invoked.
     func handleSinglePlayerEntry(_ remotePlayer: [String: Any],_ localPlayer: [String: Any], timestamp: Int) {
         // Breaks down the JSON of localPlayer and remotePlayer
         guard
@@ -153,6 +160,15 @@ final class MultiplayerService {
             print("Invalid Player Position entry:", remotePlayer, localPlayer)
             return
         }
+
+        let currentOriginKey = originKey(lat: localPlayerOriginLat, lon: localPlayerOriginLon, alt: localPlayerOriginAlt)
+        if currentOriginKey != lastOriginKey {
+            resetCalibration()
+            lastOriginKey = currentOriginKey
+            localPlayerObject.dx = 0
+            localPlayerObject.dy = 0
+            localPlayerObject.dz = 0
+        }
         
         // localPlayer Current Location Object Creation
         let localPlayerCurrentCoordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(localPlayerLat), longitude: CLLocationDegrees(localPlayerLon))
@@ -181,6 +197,19 @@ final class MultiplayerService {
         
         // Stores a SIMD3<Float> (x, y, z) position from localPlayer origin to their current location
         let localPlayerPoint = geoToLocal(localPlayerCurrentLocationObject, localPlayerOriginLocationObject)
+        if !isCalibrated {
+            calibrationSum += localPlayerPoint
+            calibrationSampleCount += 1
+            if calibrationSampleCount >= calibrationSamplesNeeded {
+                let sampleCount = Float(calibrationSampleCount)
+                let average = calibrationSum / sampleCount
+                localPlayerObject.dx = average.x
+                localPlayerObject.dy = average.y
+                localPlayerObject.dz = average.z
+                isCalibrated = true
+            }
+        }
+        players[localPlayerID] = localPlayerObject
         // Applies localPlayer offset to their position
         let localPlayerPointWithOffset = SIMD3<Float> (localPlayerPoint.x - localPlayerObject.dx, localPlayerPoint.y - localPlayerObject.dy, localPlayerPoint.z - localPlayerObject.dz)
         
@@ -284,6 +313,19 @@ final class MultiplayerService {
 
         let ARPosition = SIMD3<Float>(x2, y2, z2)
         return ARPosition
+    }
+
+    // Produces a stable string key for an origin location. This is used to detect
+    // when the shared origin changes so calibration can be reset and recomputed.
+    private func originKey(lat: Float, lon: Float, alt: Float) -> String {
+        return String(format: "%.6f|%.6f|%.2f", lat, lon, alt)
+    }
+
+    // Clears calibration state so a new averaged offset can be collected.
+    private func resetCalibration() {
+        calibrationSampleCount = 0
+        calibrationSum = SIMD3<Float>(repeating: 0)
+        isCalibrated = false
     }
     
 //    func handleARPositions(_ json: [String: Any]) {
