@@ -41,7 +41,11 @@ final class MultiplayerService {
         return id
     }()
 
-    // Function takes the entire JSON of players sent from server and breaks then into single entires for handleSingleEntry.
+    // Processes a PLAYERS_UPDATE payload from the server and routes each entry to
+    // add/update logic. This function validates the payload shape, extracts the
+    // local player's entry for relative positioning, and then iterates all players.
+    // Existing players are updated via handleSinglePlayerEntry while new players
+    // are initialized with addPlayer.
     func handlePlayer(_ json: [String: Any]) {
         guard let type = json["type"] as? String, type == "PLAYERS_UPDATE",
               let locations = json["locations"] as? [String: [String: Any]],
@@ -63,6 +67,10 @@ final class MultiplayerService {
         }
     }
     
+    // Initializes a RemotePlayer from a raw player payload. This computes a GPS-based
+    // offset between the player's current location and their origin, which is used to
+    // compensate for location drift. The resulting RemotePlayer is inserted into the
+    // players dictionary with an initial position at the local origin.
     func addPlayer(_ player: [String: Any], timestamp: Int) {
         guard
             let id = player["playerID"] as? String,
@@ -92,6 +100,7 @@ final class MultiplayerService {
         let playerOriginLocation = CLLocation(coordinate: playerOriginCoordinate, altitude: playerOriginAltitude, horizontalAccuracy: 0, verticalAccuracy: 0, timestamp: playerTimestamp)
         
         // Since this is function is called at the beginning of the game, player will physically be at the same spot so in an ideal world the postion should be zero is all axis(0,0,0) but due to hardware limitations and accuracy issues with using GPS data the position will be some number (x, y, z) so we uses this difference as the offset for that player.
+        //Problem Area Right here.
         let playerOffset = geoToLocal(playerCurrentLocation, playerOriginLocation)
         let position = SIMD3<Float> (0,0,0)
         
@@ -107,7 +116,11 @@ final class MultiplayerService {
         players[id] = player
     }
     
-    // Function calculates the current position and offset of all players and creates or updates RemotePlayer object then adds to players dictionary.
+    // Updates a single remote player using a pair of payloads: the remote player's
+    // data and the local player's data from the same PLAYERS_UPDATE message. The
+    // function converts GPS coordinates to local ENU space, applies each player's
+    // stored offset, then computes a relative vector from local to remote. The
+    // remote player's position is updated and the update callback is invoked.
     func handleSinglePlayerEntry(_ remotePlayer: [String: Any],_ localPlayer: [String: Any], timestamp: Int) {
         // Breaks down the JSON of localPlayer and remotePlayer
         guard
@@ -191,6 +204,9 @@ final class MultiplayerService {
     }
     
     
+    // Converts a geodetic location (lat/lon/alt) into ECEF coordinates. The ECEF
+    // frame is Earth-centered, Earth-fixed and is used as an intermediate step
+    // for computing local tangent plane vectors (ENU).
     func geoToECEF(_ location: CLLocation) -> SIMD3<Float> {
         let a = 6378137.0;
         let e2 = 6.69437999014e-3;
@@ -215,6 +231,9 @@ final class MultiplayerService {
         return position
     }
     
+    // Converts an ECEF position to a local ENU vector relative to a given origin.
+    // This uses the origin's latitude and longitude to build the local tangent
+    // frame and returns a vector where x = east, y = up, z = north.
     func ecefToENU(_ currentLocationECEF: SIMD3<Float>, _ originECEF: SIMD3<Float>, _ origin: CLLocation) -> SIMD3<Float> {
         let lat0 = origin.coordinate.latitude * Double.pi / 180
         let lon0 = origin.coordinate.longitude * Double.pi / 180
@@ -236,6 +255,9 @@ final class MultiplayerService {
         return position
     }
     
+    // Computes a local ENU vector from a world location to an origin using a
+    // geo -> ECEF -> ENU conversion pipeline. This is the primary helper used
+    // to translate GPS coordinates into the game's local coordinate frame.
     func geoToLocal(_ playerLocation: CLLocation, _ playerOrigin: CLLocation) -> SIMD3<Float> {
         let originECEF = geoToECEF(playerOrigin)
         let pointECRF = geoToECEF(playerLocation)
@@ -244,6 +266,9 @@ final class MultiplayerService {
         return position
     }
     
+    // Rotates a local ENU vector by a heading angle in degrees. This converts
+    // the world-aligned ENU frame into a device-aligned AR frame by rotating
+    // around the vertical axis (Y).
     func rotatePosition(_ position: SIMD3<Float>, _ headingDeg: Double) -> SIMD3<Float> {
         let psi = headingDeg * Double.pi / 180
         let theta = -psi
