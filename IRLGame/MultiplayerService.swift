@@ -101,6 +101,8 @@ final class MultiplayerService {
         
         // Since this is function is called at the beginning of the game, player will physically be at the same spot so in an ideal world the postion should be zero is all axis(0,0,0) but due to hardware limitations and accuracy issues with using GPS data the position will be some number (x, y, z) so we uses this difference as the offset for that player.
         //Problem Area Right here.
+        //lets implement averaging
+        
         let playerOffset = geoToLocal(playerCurrentLocation, playerOriginLocation)
         let position = SIMD3<Float> (0,0,0)
         
