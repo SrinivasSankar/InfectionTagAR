@@ -26,7 +26,7 @@ final class MultiplayerService {
     // Dictionary of players with their UUID as key and their RemotePlayer object as value.
     private(set) var players: [String: RemotePlayer] = [:]
 
-    private let calibrationSamplesNeeded = 5
+    private let calibrationSamplesNeeded = 15
     private var calibrationSampleCount = 0
     private var calibrationSum = SIMD3<Float>(repeating: 0)
     private var isCalibrated = false
