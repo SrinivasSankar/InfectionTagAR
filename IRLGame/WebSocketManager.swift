@@ -88,7 +88,7 @@ final class WebSocketManager {
             
         case "PLAYERS_UPDATE":
             print("PLAYERS_UPDATE recieved")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            DispatchQueue.main.async {
                 MultiplayerService.shared.handlePlayer(json)
                 GameService.shared.sendPosition()
             }
