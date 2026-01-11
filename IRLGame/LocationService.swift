@@ -16,7 +16,6 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private var onLocation: ((CLLocation) -> Void)?
     private var smoothedHeadingDeg: Double?
     private(set) var lastLocation: CLLocation?
-    private var distanceFilterResetTimer: Timer?
     
     private(set) var lastHeadingDeg: Double?
     private(set) var lastHeadingAccuracy: Double?
@@ -26,7 +25,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        manager.distanceFilter = 2.0
+        manager.distanceFilter = 0
         manager.allowsBackgroundLocationUpdates = true
         manager.pausesLocationUpdatesAutomatically = false
         
@@ -47,7 +46,6 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         }
 
         if status == .authorizedWhenInUse || status == .authorizedAlways {
-            startBurstLocationUpdates()
             manager.startUpdatingLocation()
             manager.startUpdatingHeading()
             print("Location and Heading Updates started")
@@ -99,7 +97,6 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         let status = manager.authorizationStatus
 
         if status == .authorizedWhenInUse || status == .authorizedAlways {
-            startBurstLocationUpdates()
             manager.startUpdatingLocation()
             manager.startUpdatingHeading()
         }
@@ -135,13 +132,5 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location error:", error.localizedDescription)
-    }
-
-    private func startBurstLocationUpdates() {
-        distanceFilterResetTimer?.invalidate()
-        manager.distanceFilter = kCLDistanceFilterNone
-        distanceFilterResetTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { [weak self] _ in
-            self?.manager.distanceFilter = 2.0
-        }
     }
 }
